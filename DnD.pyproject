@@ -1,0 +1,3 @@
+{
+    "files": ["main.py", "form.ui", "counters_window.ui", "counters_2_window.ui", "rolls_window.ui", "states_window.ui"]
+}
