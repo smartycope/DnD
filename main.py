@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-from Cope import debug, todo, unreachableState, FunctionCall
+# from Cope import debug, todo, unreachableState, FunctionCall
 from PyQt5 import uic
 from PyQt5.QtCore import QEvent, QFile, QSize, Qt, QPoint
 from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPalette, QPixmap
@@ -17,32 +17,40 @@ from PyQt5.QtWidgets import (QAbstractButton, QAbstractSpinBox, QApplication,
                              QStyle, QStyleFactory, QWidget, QCheckBox, QAbstractItemView)
 
 # from os.path import dirname, join, basename; DIR = dirname(__file__)
+from functools import partial
 
 DIR = Path(__file__).resolve().parent
 
-todo('figure out how passive stats work')
-todo('add death counters')
-todo('fix counters spawning')
-todo('add better spell stuffs')
-todo('add a better inventory system')
-todo('add leveling up mechanics better')
-todo('add a damage/heal bar?')
-todo('add a rage state')
-todo('research and add more states')
-todo('save states')
-tood('save counters')
-todo('disable closing MDI windows')
-todo('limit exhaustion levels')
-todo('have the exhaustion levels automatically disadvantage the appropriate rolls')
+# todo('figure out how passive stats work')
+# todo('add death counters')
+# todo('fix counters spawning')
+# todo('add better spell stuffs')
+# todo('add a better inventory system')
+# todo('add leveling up mechanics better')
+# todo('add a damage/heal bar?')
+# todo('add a rage state')
+# todo('research and add more states')
+# todo('save states')
+# tood('save counters')
+# todo('disable closing MDI windows')
+# todo('limit exhaustion levels')
+# todo('have the exhaustion levels automatically disadvantage the appropriate rolls')
 
 __DEBUG__ = True
 
-BACKGROUND_IMAGE_PATH = '/home/leonard/hello/python/DnD/background.png'
-# FRAME_PATH = '/home/leonard/hello/python/DnD/thinCelticBorder.png'
-# FRAME_PATH = '/home/leonard/hello/python/DnD/celticFrame.png'
-# FRAME_PATH = '/home/leonard/hello/python/DnD/gothicFrame.png'
-FRAME_PATH = '/home/leonard/hello/python/DnD/BrownBoarder.png'
-PAPER_BACKGROUND_2 = '/home/leonard/hello/python/DnD/paperBackground2.png'
+# BACKGROUND_IMAGE_PATH = '/home/leonard/hello/python/DnD/background.png'
+# # FRAME_PATH = '/home/leonard/hello/python/DnD/thinCelticBorder.png'
+# # FRAME_PATH = '/home/leonard/hello/python/DnD/celticFrame.png'
+# # FRAME_PATH = '/home/leonard/hello/python/DnD/gothicFrame.png'
+# FRAME_PATH = '/home/leonard/hello/python/DnD/BrownBoarder.png'
+# PAPER_BACKGROUND_2 = '/home/leonard/hello/python/DnD/paperBackground2.png'
+
+BACKGROUND_IMAGE_PATH = str(DIR / 'background.png')
+# FRAME_PATH = str(DIR / 'thinCelticBorder.png')
+# FRAME_PATH = str(DIR / 'celticFrame.png')
+# FRAME_PATH = str(DIR / 'gothicFrame.png')
+FRAME_PATH = str(DIR / 'BrownBoarder.png')
+PAPER_BACKGROUND_2 = str(DIR / 'paperBackground2.png')
 
 class MainWindow(QMainWindow):
     # namedGroup('count', number()) + either('d', 'D') + namedGroup('sides', number()) + optional(whitespace()) + '+' + optional(whitespace()) + namedGroup('additional', number())
@@ -281,7 +289,32 @@ class MainWindow(QMainWindow):
             self._subWindows[win].setWindowTitle(win.capitalize())
             # TODO: This doesn't work, find a new way to block closing
             # self._subWindows[win].closeEvent = lambda *args, **kwargs: None
+            # self.mdiArea.addSubWindow(self._subWindows[win])
+            # Set background image for MDI subwindows
             self.mdiArea.addSubWindow(self._subWindows[win])
+
+            # self._subWindows[win].setStyleSheet(f"background-image: url('{PAPER_BACKGROUND_2}'); background-repeat: repeat;")
+            # self._subWindows[win].setStyleSheet(f"background-image: url('{PAPER_BACKGROUND_2}'); background-repeat: repeat; color: rgb(30, 30, 30);")
+            self._subWindows[win].setStyleSheet(f"background-image: url('{PAPER_BACKGROUND_2}'); background-repeat: repeat; color: rgb(30, 30, 30);")  # This sets the text color for MDI subwindow titles
+            for i in self._subWindowWidgets[win].children():
+                try:
+                    i.setStyleSheet("background: rgb(194, 159, 116);")
+
+            # for i in self._subWindowWidgets[win].children():
+            #     try:
+            #         # i.setStyleSheet("background: rgb(194, 159, 116); color: rgb(30, 30, 30)")
+                except:
+                    pass
+
+        # ...
+        # Set the background image of the MDI area as a whole
+        self.mdiArea.setBackground(QBrush(QPixmap(PAPER_BACKGROUND_2)))
+
+            # Set background color for MDI subwindows
+            # self._subWindows[win].setStyleSheet("background-color: rgb(194, 159, 116);")
+
+        # Set the background color of the MDI area as a whole
+        # self.mdiArea.setBackground(QBrush(QColor(194, 159, 116)))
 
 
         self.rolls = self._subWindowWidgets['rolls'].rolls
@@ -373,17 +406,18 @@ class MainWindow(QMainWindow):
             elif state == Qt.CheckState.Unchecked:
                 self.advantageBox.setText('Regular Roll')
             else:
-                unreachableState()
+                # unreachableState()
+                assert False
         self.advantageBox.stateChanged.connect(updateAdvantageName)
 
         # Connect all the auto-roll buttons that look like labels
         for i in self.skillsStr:
-            getattr(self, i + '_roll').pressed.connect(FunctionCall(lambda var: self.rollDice(1, 20, getattr(self, var).value(), roll=var.capitalize()+' Check'), (i,)))
+            getattr(self, i + '_roll').pressed.connect(partial(lambda var: self.rollDice(1, 20, getattr(self, var).value(), roll=var.capitalize()+' Check'), var=i))
             getattr(self, i + '_prof').clicked.connect(self.updateStats)
 
         # Connect the saving throw buttons
         for k in self.basesStr:
-            getattr(self, k + '_save').pressed.connect(FunctionCall(lambda var: self.rollDice(1, 20, getattr(self, var + '_saving_throw').value(), roll=var.capitalize()+' Saving Throw'), (k,)))
+            getattr(self, k + '_save').pressed.connect(partial(lambda var: self.rollDice(1, 20, getattr(self, var + '_saving_throw').value(), roll=var.capitalize()+' Saving Throw'), var=k))
             getattr(self, k + '_base').valueChanged.connect(self.updateStats)
             getattr(self, k + '_prof').clicked.connect(self.updateStats)
 
@@ -707,11 +741,18 @@ def generateStyle():
 
     return Style()
 
+# def generateStyle():
+#     style = Style()
+#     style.polished.connect(lambda: QApplication.style().setStyleSheet("QGroupBox::title { color: rgb(0, 0, 0) }"))  # Set group box title text color to black
+#     return style
+
 def generatePalette(size):
     dark = QColor(30, 30, 30)
     light = QColor(235, 235, 235)
     mid = QColor(115, 123, 131)
     red = QColor('red')
+    tan = QColor(194, 159, 116)
+
     # palette = QPalette(dark,  # windowText
     #                    dark,  # button
     #                    light, # light
@@ -727,19 +768,26 @@ def generatePalette(size):
     # Set the main window background
     palette.setBrush(QPalette.ColorRole.Background, QBrush(QPixmap(BACKGROUND_IMAGE_PATH).scaled(size, Qt.AspectRatioMode.IgnoreAspectRatio)))
 
+    # Set the background color for input boxes
+    palette.setBrush(QPalette.ColorRole.Base, tan)
+    # Set the background color for the buttons & drop-down boxes
+    palette.setBrush(QPalette.ColorRole.Button, tan)
+
     # palette.setBrush(QPalette.ColorRole.Window, )
-    palette.setBrush(QPalette.ColorRole.WindowText, dark)
-    palette.setBrush(QPalette.ColorRole.Base, dark)
+    # palette.setBrush(QPalette.ColorRole.WindowText, dark)
     # palette.setBrush(QPalette.ColorRole.AlternateBase, red)
     palette.setBrush(QPalette.ColorRole.PlaceholderText, mid)
-    palette.setBrush(QPalette.ColorRole.Text, light)
-    palette.setBrush(QPalette.ColorRole.Button, dark)
-    palette.setBrush(QPalette.ColorRole.ButtonText, light)
+    # palette.setBrush(QPalette.ColorRole.Text, light)
+    # palette.setBrush(QPalette.ColorRole.ButtonText, light)
     # palette.setBrush(QPalette.ColorRole.BrightText, QColor('red'))
     # palette.setBrush(QPalette.ColorRole., QColor('red'))
 
-    return palette
+    palette.setBrush(QPalette.ColorRole.Text, dark)  # This sets the text color for most widgets
+    palette.setBrush(QPalette.ColorRole.ButtonText, dark)  # This sets the text color for buttons
+    palette.setBrush(QPalette.ColorRole.WindowText, dark)  # This sets the text color for window titles
 
+
+    return palette
 
 if __name__ == "__main__":
     app = QApplication([])
